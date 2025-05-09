@@ -24,6 +24,11 @@ finetuned_ws/scheduler.pt
 finetuned_ws/training_args.bin
 finetuned_ws/rng_state.pth
 finetuned_ws/*.bin
+finetuned_ws/*.pt
+finetuned_ws/*.safetensors
+finetuned_ws/*.json
+finetuned_ws/*.txt
+finetuned_ws/checkpoint-*/
 
 # Data
 *.csv
