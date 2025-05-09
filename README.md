@@ -94,39 +94,3 @@ pytest tests/
 
 ## 授權
 MIT License
-
----
-
-## 【如何備份現有倉庫並重建乾淨推送】
-
-### 1. 完整備份現有內容
-```bash
-git clone https://github.com/MJS-Ermine/AntiFraud.git
-# 或直接複製整個 AntiFraud 資料夾到安全位置
-```
-
-### 2. 新建乾淨倉庫並逐步推送
-1. **在 GitHub 建立新倉庫**（如 AntiFraud-Clean）。
-2. **本地新建資料夾，只複製你要的檔案（不要 .git）**。
-3. **初始化 git 並推送**
-   ```bash
-   cd 新資料夾
-   git init
-   git add .
-   git commit -m "初始化乾淨專案"
-   git remote add origin https://github.com/你的帳號/AntiFraud-Clean.git
-   git push -u origin main
-   ```
-4. **每次修改都用明確中文 commit message**。
-
-### 3. 進階：重寫歷史（如需）
-- 參考 [git filter-repo](https://github.com/newren/git-filter-repo) 或 `git rebase -i`，可刪除不想要的 commit 或訊息。
-
----
-
-## 聯絡與貢獻
-如有建議、bug 回報或協作需求，請開 issue 或 pull request。
-
----
-
-你可參考 [AntiFraud 倉庫](https://github.com/MJS-Ermine/AntiFraud) 進行操作。
