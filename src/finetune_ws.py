@@ -18,13 +18,16 @@ def read_bio_data(filepath: Path) -> Tuple[List[List[str]], List[List[str]]]:
         chars, tags = [], []
         for line in f:
             line = line.strip()
-            if not line:
+            if not line or line.startswith('#'):
                 if chars:
                     sentences.append(chars)
                     labels.append(tags)
                     chars, tags = [], []
                 continue
-            c, t = line.split()
+            parts = line.split()
+            if len(parts) != 2:
+                continue
+            c, t = parts
             chars.append(c)
             tags.append(t)
         if chars:
@@ -37,7 +40,7 @@ def bio_to_ids(labels: List[List[str]], label2id: dict) -> List[List[int]]:
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    data_path = Path("data/ws_finetune_sample.txt")
+    data_path = Path("../data/ws_finetune_sample.txt")
     sentences, tags = read_bio_data(data_path)
     label_list = sorted({t for seq in tags for t in seq})
     label2id = {l: i for i, l in enumerate(label_list)}
@@ -47,19 +50,39 @@ def main():
         "ckiplab/bert-base-chinese-ws",
         num_labels=len(label_list),
         id2label=id2label,
-        label2id=label2id
+        label2id=label2id,
+        ignore_mismatched_sizes=True
     )
     # 編碼資料
     encodings = tokenizer(["".join(seq) for seq in sentences], is_split_into_words=False, return_offsets_mapping=True, padding=True, truncation=True)
-    labels_ids = bio_to_ids(tags, label2id)
-    # 對齊 labels 長度
+    # labels 對齊 tokenizer word_ids
+    aligned_labels = []
+    for i, seq in enumerate(sentences):
+        word_ids = list(range(len(seq)))  # 每個字一個 word_id
+        tokens = tokenizer.tokenize("".join(seq))
+        encoding = tokenizer("".join(seq), return_offsets_mapping=True)
+        offsets = encoding["offset_mapping"]
+        label_ids = []
+        label_seq = tags[i]
+        char_idx = 0
+        for offset in offsets:
+            if offset == (0, 0):  # special token
+                label_ids.append(-100)
+            else:
+                if char_idx < len(label_seq):
+                    label_ids.append(label2id[label_seq[char_idx]])
+                else:
+                    label_ids.append(-100)
+                char_idx += 1
+        aligned_labels.append(label_ids)
+    # padding labels
     max_len = max(len(e) for e in encodings["input_ids"])
-    for i in range(len(labels_ids)):
-        labels_ids[i] = labels_ids[i] + [-100] * (max_len - len(labels_ids[i]))
+    for i in range(len(aligned_labels)):
+        aligned_labels[i] = aligned_labels[i] + [-100] * (max_len - len(aligned_labels[i]))
     dataset = Dataset.from_dict({
         "input_ids": encodings["input_ids"],
         "attention_mask": encodings["attention_mask"],
-        "labels": labels_ids
+        "labels": aligned_labels
     })
     # 微調參數
     args = TrainingArguments(
